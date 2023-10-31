@@ -1,4 +1,3 @@
-import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -25,15 +24,21 @@ class MethodChannelFlutterRpaUtils extends PlatformInterface {
     return version;
   }
 
-  Future<Bool?> findText({required String content}) async {
-    final result = await methodChannel.invokeMethod<Bool>(
+  Future<bool?> findText({required String content}) async {
+    final result = await methodChannel.invokeMethod<bool>(
+        'findText', {"content": content});
+    return result;
+  }
+
+  Future<String?> findTextList({required String content}) async {
+    final result = await methodChannel.invokeMethod<String>(
         'findText', {"content": content});
     return result;
   }
 
 
-  Future<Bool?> clickButton({required Object accessibilityService, required Object accessibilityNodeInfo}) async {
-    final result = await methodChannel.invokeMethod<Bool>(
+  Future<bool?> clickButton({required Object accessibilityService, required Object accessibilityNodeInfo}) async {
+    final result = await methodChannel.invokeMethod<bool>(
         'clickButton', {"accessibilityService": accessibilityService, "accessibilityNodeInfo": accessibilityNodeInfo});
     return result;
   }

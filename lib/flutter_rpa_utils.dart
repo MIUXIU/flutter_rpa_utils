@@ -6,4 +6,8 @@ class FlutterRpaUtils {
   Future<String?> getPlatformVersion() {
     return MethodChannelFlutterRpaUtils.instance.getPlatformVersion();
   }
+
+  Future<String?> findText({required String content}) {
+    return MethodChannelFlutterRpaUtils.instance.findTextList(content: content);
+  }
 }
