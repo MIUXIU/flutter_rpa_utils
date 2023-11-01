@@ -12,6 +12,11 @@ dependencies:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
   permission_handler: ^11.0.1
+  flutter_overlay_window: ^0.4.3
+#  flutter_accessibility_service:
+#    git:
+#      url: https://github.com/MIUXIU/flutter_accessibility_service
+#      ref: v1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -37,7 +42,8 @@ flutter:
     platforms:
       android:
         package: fun.tszsy.flutter_rpa_utils
-        pluginClass: FlutterRpaUtilsPlugin
+        pluginClass: FlutterAccessibilityServicePlugin
+
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
