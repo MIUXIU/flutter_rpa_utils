@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:flutter_rpa_utils/flutter_rpa_utils.dart';
 
 class MessangerChatHead extends StatefulWidget {
   const MessangerChatHead({Key? key}) : super(key: key);
@@ -29,32 +30,58 @@ class _MessangerChatHeadState extends State<MessangerChatHead> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Material(
-        color: Colors.transparent,
-        elevation: 0.0,
-        child: GestureDetector(
-          onTap: () async {
-            if (shape == BoxShape.circle) {
-              await FlutterOverlayWindow.resizeOverlay(300, 300);
-              setState(() {
-                shape = BoxShape.rectangle;
-              });
-            } else {
-              await FlutterOverlayWindow.resizeOverlay(150, 150);
-              setState(() {
-                shape = BoxShape.circle;
-              });
-            }
-          },
-          child: Container(
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(color: color, shape: shape),
-            child:  Center(
-              child: Text(data, style: const TextStyle(color: Colors.black, fontSize: 20),),
+      home: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white70,
+              borderRadius: BorderRadius.all(Radius.circular(30)),
             ),
-          ),
-        ),
-      ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () async {
+                        FlutterRpaUtils().clickButtonByText(text: "通讯录");
+                        await Future.delayed(const Duration(seconds: 3));
+                        FlutterRpaUtils().clickButtonByText(text: "发现");
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '启动',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20),
+                    child: Center(
+                      child: Text(
+                        '状态',
+                        style: TextStyle(
+                          fontSize: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
     );
   }
 }

@@ -19,6 +19,7 @@ public class MyAccessibilityService extends AccessibilityListener {
             return;
         }
         RPAManager.rootNode = rootNode;
+        RPAManager.accessibilityService = this;
     }
 
     @Override

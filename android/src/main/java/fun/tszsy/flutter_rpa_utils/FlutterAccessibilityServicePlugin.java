@@ -5,13 +5,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 
-import fun.tszsy.flutter_rpa_utils.RPAManager;
+import java.util.List;
+
 import fun.tszsy.flutter_rpa_utils.service.AccessibilityListener;
 import fun.tszsy.flutter_rpa_utils.service.AccessibilityReceiver;
 import fun.tszsy.flutter_rpa_utils.service.Utils;
@@ -28,7 +31,8 @@ import io.flutter.plugin.common.PluginRegistry;
 /**
  * FlutterAccessibilityServicePlugin
  */
-public class FlutterAccessibilityServicePlugin implements FlutterPlugin, ActivityAware, MethodCallHandler, PluginRegistry.ActivityResultListener, EventChannel.StreamHandler {
+public class FlutterAccessibilityServicePlugin implements FlutterPlugin, ActivityAware, MethodCallHandler,
+        PluginRegistry.ActivityResultListener, EventChannel.StreamHandler {
 
     private static final String CHANNEL_TAG = "flutter_rpa_utils";
     private static final String EVENT_TAG = "x-slayer/accessibility_event";
@@ -68,6 +72,25 @@ public class FlutterAccessibilityServicePlugin implements FlutterPlugin, Activit
         } else if (call.method.equals("requestAccessibilityPermission")) {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             mActivity.startActivityForResult(intent, REQUEST_CODE_FOR_ACCESSIBILITY);
+        } else if (call.method.equals("clickButtonByText")) {
+
+            try {
+                String text = call.argument("text");
+                int index = call.argument("index");
+                if (TextUtils.isEmpty(text)) {
+                    result.success(false);
+                    return;
+                }
+                List<AccessibilityNodeInfo> accessibilityNodeInfoList =
+                        RPAManager.rootNode.findAccessibilityNodeInfosByText(text);
+                if (accessibilityNodeInfoList == null || accessibilityNodeInfoList.size() == 0) {
+                    result.success(false);
+                    return;
+                }
+                RPAToolsUtils.clickButton(RPAManager.accessibilityService,accessibilityNodeInfoList.get(index));
+            } catch (Exception e) {
+                result.error("error",e.toString(),"");
+            }
         } else {
             result.notImplemented();
         }

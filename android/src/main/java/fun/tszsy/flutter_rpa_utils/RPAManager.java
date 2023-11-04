@@ -1,5 +1,6 @@
 package fun.tszsy.flutter_rpa_utils;
 
+import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -22,6 +23,7 @@ public class RPAManager {
     private Context applicationContext;
 
     public static AccessibilityNodeInfo rootNode;
+    public static AccessibilityService accessibilityService;
 
     public RPAManager(Context applicationContext) {
         this.applicationContext = applicationContext.getApplicationContext();

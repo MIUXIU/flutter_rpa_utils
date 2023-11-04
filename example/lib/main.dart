@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:flutter_rpa_utils/flutter_rpa_utils.dart';
 import 'package:flutter_rpa_utils/service/flutter_accessibility_service.dart';
@@ -26,14 +25,11 @@ void main() {
 //       ));
 // }
 
-
 // overlay entry point
 @pragma("vm:entry-point")
 void overlayMain() {
   runApp(const MessangerChatHead());
 }
-
-
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -56,12 +52,13 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     // bool status = await FlutterAccessibilityService.isAccessibilityPermissionEnabled();
 
-    // bool status = await FlutterAccessibilityService.requestAccessibilityPermission();
+    bool status = await FlutterAccessibilityService.requestAccessibilityPermission();
 
     /// stream the incoming Accessibility events
     FlutterAccessibilityService.accessStream.listen((event) {
       setState(() {
         _platformVersion = event.toString();
+        FlutterOverlayWindow.shareData(_platformVersion);
       });
       /*
   Current Event: AccessibilityEvent: (
@@ -97,13 +94,20 @@ class _MyAppState extends State<MyApp> {
               MaterialButton(
                 color: Colors.red,
                 onPressed: () async {
-                  await FlutterOverlayWindow.showOverlay(width: 300, height: 300, overlayContent: "123333");
+                  await FlutterOverlayWindow.showOverlay(
+                      width: 900,
+                      height: 500,
+                      overlayTitle: "开单橙",
+                      overlayContent: "添加群聊好友",
+                      flag: OverlayFlag.defaultFlag,
+                      alignment: OverlayAlignment.bottomCenter,
+                      enableDrag: true);
                 },
               ),
               MaterialButton(
                 color: Colors.green,
                 onPressed: () async {
-                  await FlutterOverlayWindow.shareData("123444");
+                  await FlutterOverlayWindow.shareData("test");
                 },
               ),
               Text('Running on: $_platformVersion\n'),
