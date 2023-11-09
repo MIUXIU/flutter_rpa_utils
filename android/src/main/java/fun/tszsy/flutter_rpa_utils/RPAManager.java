@@ -5,54 +5,78 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.Message;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import androidx.annotation.NonNull;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RPAManager {
     private final static String TAG = RPAManager.class.getSimpleName();
     private Handler mainThreadHandler;
     private Handler mHandler;
-    private Context applicationContext;
 
     public static AccessibilityNodeInfo rootNode;
     public static AccessibilityService accessibilityService;
 
-    public RPAManager(Context applicationContext) {
-        this.applicationContext = applicationContext.getApplicationContext();
-    }
-
-    private int screenWidth = 0;
-    private int screenHeight = 0;
-
-    public void init(){
+    public RPAManager() {
         HandlerThread mHandlerThread = new HandlerThread("RPAThread");
         mHandlerThread.start();
-        WindowManager windowManager = (WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics metrics = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getMetrics(metrics);
-        screenWidth = metrics.widthPixels;
-        screenHeight = metrics.heightPixels;
         mainThreadHandler = new Handler(Looper.getMainLooper());
-        Log.d(TAG, "init: screenHeight " + screenHeight);
         mHandler = new Handler(mHandlerThread.getLooper());
     }
 
-    public List<AccessibilityNodeInfo> findText(String content){
+    public List<String> findText(String content) {
         List<AccessibilityNodeInfo> accessibilityNodeInfoList;
-        if (rootNode != null){
+        if (rootNode != null) {
             accessibilityNodeInfoList = rootNode.findAccessibilityNodeInfosByText(content);
-        }else {
+        } else {
             accessibilityNodeInfoList = new ArrayList<>();
         }
+        List<String> resultList = new ArrayList<>();
+        for (AccessibilityNodeInfo accessibilityNodeInfo : accessibilityNodeInfoList) {
+            if (accessibilityNodeInfo == null || accessibilityNodeInfo.getText() == null) {
+                continue;
+            }
+            String tempString = accessibilityNodeInfo.getText().toString();
+            if (TextUtils.isEmpty(tempString)) {
+                continue;
+            }
+            resultList.add(tempString);
+        }
 
-        return accessibilityNodeInfoList;
+        return resultList;
     }
+
+    /**
+     * 根据类名查找节点
+     */
+    public AccessibilityNodeInfo findNodeByClassName(AccessibilityNodeInfo parentNode, String className) {
+        if (parentNode == null) {
+            return null;
+        }
+
+        int childCount = parentNode.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            AccessibilityNodeInfo childNode = parentNode.getChild(i);
+            if (childNode != null) {
+                if (className.contentEquals(childNode.getClassName())) {
+                    return childNode;
+                } else {
+                    AccessibilityNodeInfo result = findNodeByClassName(childNode, className);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
 }

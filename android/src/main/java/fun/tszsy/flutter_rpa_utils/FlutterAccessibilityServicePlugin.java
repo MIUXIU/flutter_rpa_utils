@@ -13,8 +13,10 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import fun.tszsy.flutter_rpa_utils.method.AccessibilityNodeInfoMethod;
 import fun.tszsy.flutter_rpa_utils.service.AccessibilityListener;
 import fun.tszsy.flutter_rpa_utils.service.AccessibilityReceiver;
 import fun.tszsy.flutter_rpa_utils.service.Utils;
@@ -24,14 +26,14 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry;
 
 /**
  * FlutterAccessibilityServicePlugin
  */
-public class FlutterAccessibilityServicePlugin implements FlutterPlugin, ActivityAware, MethodCallHandler,
+public class FlutterAccessibilityServicePlugin extends AccessibilityNodeInfoMethod implements FlutterPlugin,
+        ActivityAware,
         PluginRegistry.ActivityResultListener, EventChannel.StreamHandler {
 
     private static final String CHANNEL_TAG = "flutter_rpa_utils";
@@ -46,9 +48,6 @@ public class FlutterAccessibilityServicePlugin implements FlutterPlugin, Activit
     private Result pendingResult;
     final int REQUEST_CODE_FOR_ACCESSIBILITY = 167;
 
-    private RPAManager rpaManager;
-
-    private Gson gson;
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -60,41 +59,75 @@ public class FlutterAccessibilityServicePlugin implements FlutterPlugin, Activit
 
         gson = new Gson();
         Context applicationContext = flutterPluginBinding.getApplicationContext();
-        rpaManager = new RPAManager(applicationContext);
-        rpaManager.init();
     }
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        boolean resultSuper = super.superOnMethodCall(call, result);
+        if (resultSuper) {
+            return;
+        }
         pendingResult = result;
-        if (call.method.equals("isAccessibilityPermissionEnabled")) {
-            result.success(Utils.isAccessibilitySettingsOn(context));
-        } else if (call.method.equals("requestAccessibilityPermission")) {
-            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            mActivity.startActivityForResult(intent, REQUEST_CODE_FOR_ACCESSIBILITY);
-        } else if (call.method.equals("clickButtonByText")) {
+        switch (call.method) {
+            case "isAccessibilityPermissionEnabled":
+                result.success(Utils.isAccessibilitySettingsOn(context));
+                break;
+            case "requestAccessibilityPermission":
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                mActivity.startActivityForResult(intent, REQUEST_CODE_FOR_ACCESSIBILITY);
+                break;
+            case "clickButtonByText":
+                try {
+                    String text = call.argument("text");
+                    Integer index = call.argument("index");
+                    if (TextUtils.isEmpty(text) || index == null) {
+                        result.success(false);
+                        return;
+                    }
+                    List<AccessibilityNodeInfo> accessibilityNodeInfoList =
+                            RPAManager.rootNode.findAccessibilityNodeInfosByText(text);
+                    if (accessibilityNodeInfoList == null || accessibilityNodeInfoList.size() == 0) {
+                        result.success(false);
+                        return;
+                    }
+                    boolean clickResult = RPAToolsUtils.clickButton(RPAManager.accessibilityService,
+                            accessibilityNodeInfoList.get(index));
+                    result.success(clickResult);
+                } catch (Exception e) {
+                    result.error("error", e.toString(), "");
+                }
+                break;
+            case "findText":
+                try {
+                    String text = call.argument("text");
+                    if (TextUtils.isEmpty(text)) {
+                        result.success(new ArrayList<String>());
+                        return;
+                    }
+                    result.success(rpaManager.findText(text));
+                } catch (Exception e) {
+                    result.error("error", e.toString(), "");
+                }
+                break;
 
-            try {
-                String text = call.argument("text");
-                int index = call.argument("index");
-                if (TextUtils.isEmpty(text)) {
-                    result.success(false);
-                    return;
+            case "findNodeByClassName":
+                try {
+                    String className = call.argument("className");
+                    if (TextUtils.isEmpty(className)) {
+                        result.success(new ArrayList<String>());
+                        return;
+                    }
+                    result.success(super.object2String(rpaManager.findNodeByClassName(RPAManager.rootNode, className)));
+                } catch (Exception e) {
+                    result.error("error", e.toString(), "");
                 }
-                List<AccessibilityNodeInfo> accessibilityNodeInfoList =
-                        RPAManager.rootNode.findAccessibilityNodeInfosByText(text);
-                if (accessibilityNodeInfoList == null || accessibilityNodeInfoList.size() == 0) {
-                    result.success(false);
-                    return;
-                }
-                RPAToolsUtils.clickButton(RPAManager.accessibilityService,accessibilityNodeInfoList.get(index));
-            } catch (Exception e) {
-                result.error("error",e.toString(),"");
-            }
-        } else {
-            result.notImplemented();
+                break;
+            default:
+                result.notImplemented();
+                break;
         }
     }
+
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
