@@ -88,6 +88,13 @@ public class RPAToolsUtils {
                 bundle);
     }
 
+    public  static  boolean inputText(AccessibilityNodeInfo nodeInfo,String text){
+        Bundle requireArguments = new Bundle();
+        requireArguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
+        boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, requireArguments);
+        return result;
+    }
+
     /**
      * 获取节点大小位置
      */

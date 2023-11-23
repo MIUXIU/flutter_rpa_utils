@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import fun.tszsy.flutter_rpa_utils.RPAManager;
+import fun.tszsy.flutter_rpa_utils.RPAToolsUtils;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
@@ -73,6 +74,59 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
                 }
                 break;
 
+            case "click":
+                try {
+                    String source = call.argument("source");
+                    if (TextUtils.isEmpty(source)) {
+                        result.success(false);
+                        return true;
+                    }
+                    assert source != null;
+
+                    AccessibilityNodeInfo accessibilityNodeInfo = stringToObject(source, AccessibilityNodeInfo.CREATOR);
+                    result.success(RPAToolsUtils.clickButton(RPAManager.accessibilityService, accessibilityNodeInfo));
+                } catch (Exception e) {
+                    result.error("click error", e.toString(), "");
+                    e.printStackTrace();
+                }
+                break;
+
+            case "inputText":
+                try {
+                    String source = call.argument("source");
+                    String text = call.argument("text");
+                    if (TextUtils.isEmpty(source) || text == null) {
+                        result.success(null);
+                        return true;
+                    }
+                    assert source != null;
+
+                    AccessibilityNodeInfo accessibilityNodeInfo = stringToObject(source, AccessibilityNodeInfo.CREATOR);
+                    result.success(RPAToolsUtils.inputText(accessibilityNodeInfo, text));
+                } catch (Exception e) {
+                    result.error("getChild error", e.toString(), "");
+                    e.printStackTrace();
+                }
+                break;
+
+            case "getParent":
+                try {
+                    String source = call.argument("source");
+                    if (TextUtils.isEmpty(source)) {
+                        result.success(null);
+                        return true;
+                    }
+                    assert source != null;
+
+                    AccessibilityNodeInfo accessibilityNodeInfo = stringToObject(source, AccessibilityNodeInfo.CREATOR);
+                    AccessibilityNodeInfo resultAccessibilityNodeInfo = accessibilityNodeInfo.getParent();
+                    result.success(object2String(resultAccessibilityNodeInfo));
+                } catch (Exception e) {
+                    result.error("getParent error", e.toString(), "");
+                    e.printStackTrace();
+                }
+                break;
+
             case "getChild":
                 try {
                     String source = call.argument("source");
@@ -88,7 +142,25 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
 
                     result.success(object2String(resultAccessibilityNodeInfo));
                 } catch (Exception e) {
-                    result.error("getText error", e.toString(), "");
+                    result.error("getChild error", e.toString(), "");
+                    e.printStackTrace();
+                }
+                break;
+
+            case "getChildCount":
+                try {
+                    String source = call.argument("source");
+                    if (TextUtils.isEmpty(source)) {
+                        result.success(0);
+                        return true;
+                    }
+                    assert source != null;
+
+                    AccessibilityNodeInfo accessibilityNodeInfo = stringToObject(source, AccessibilityNodeInfo.CREATOR);
+                    int count = accessibilityNodeInfo.getChildCount();
+                    result.success(count);
+                } catch (Exception e) {
+                    result.error("getChildCount error", e.toString(), "");
                     e.printStackTrace();
                 }
                 break;
@@ -103,12 +175,19 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
                     }
                     assert source != null;
 
-                    AccessibilityNodeInfo resultAccessibilityNodeInfo = stringToObject(source, AccessibilityNodeInfo.CREATOR);
+                    AccessibilityNodeInfo resultAccessibilityNodeInfo = stringToObject(source,
+                            AccessibilityNodeInfo.CREATOR);
                     for (Integer index : indexList) {
                         if (resultAccessibilityNodeInfo == null) {
                             result.success(null);
                             return true;
                         }
+                        int childCount = resultAccessibilityNodeInfo.getChildCount();
+                        if (index >= childCount) {
+                            result.success(null);
+                            return true;
+                        }
+
                         resultAccessibilityNodeInfo = resultAccessibilityNodeInfo.getChild(index);
                     }
 
@@ -117,6 +196,17 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
                     result.error("getText error", e.toString(), "");
                     e.printStackTrace();
                 }
+                break;
+            case "scrollToPosition":
+                String source = call.argument("source");
+                Integer index = call.argument("index");
+                Integer rowCount = call.argument("rowCount");
+                if (TextUtils.isEmpty(source) || index == null || rowCount == null) {
+                    result.success(false);
+                    return true;
+                }
+                AccessibilityNodeInfo accessibilityNodeInfo = stringToObject(source, AccessibilityNodeInfo.CREATOR);
+                result.success(RPAToolsUtils.scrollToPosition(accessibilityNodeInfo, index, rowCount));
                 break;
             default:
                 return false;
@@ -128,7 +218,11 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
 
 
     public HashMap<String, Object> object2String(AccessibilityNodeInfo accessibilityNodeInfo) {
-        String packageName = accessibilityNodeInfo.getPackageName() == null? "":accessibilityNodeInfo.getPackageName().toString();
+        if (accessibilityNodeInfo == null) {
+            return null;
+        }
+        String packageName = accessibilityNodeInfo.getPackageName() == null ? "" :
+                accessibilityNodeInfo.getPackageName().toString();
         AccessibilityWindowInfo windowInfo = null;
         try {
             windowInfo = accessibilityNodeInfo.getWindow();
@@ -137,10 +231,10 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
         }
 
 
-
         HashMap<String, Object> data = new HashMap<>();
         data.put("packageName", packageName);
         data.put("className", accessibilityNodeInfo.getClassName());
+        data.put("childCount", accessibilityNodeInfo.getChildCount());
         data.put("capturedText", accessibilityNodeInfo.getText() == null ? null :
                 accessibilityNodeInfo.getText().toString());
 
@@ -188,14 +282,14 @@ public class AccessibilityNodeInfoMethod implements MethodChannel.MethodCallHand
         return frame;
     }
 
-    public  Parcel stringToObject(byte[] bytes) {
+    public Parcel stringToObject(byte[] bytes) {
         Parcel parcel = Parcel.obtain();
         parcel.unmarshall(bytes, 0, bytes.length);
         parcel.setDataPosition(0); // this is extremely important!
         return parcel;
     }
 
-    public  <T> T stringToObject(String str, Parcelable.Creator<T> creator) {
+    public <T> T stringToObject(String str, Parcelable.Creator<T> creator) {
         // 1.解码
         byte[] bytes = Base64.decode(str, Base64.DEFAULT);
         // 2.反序列化

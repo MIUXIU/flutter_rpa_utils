@@ -35,6 +35,10 @@ class FlutterRpaUtils {
     return MethodChannelFlutterRpaUtils.instance.findNodeByClassName(className: className);
   }
 
+  Future<bool> globalBack() {
+    return MethodChannelFlutterRpaUtils.instance.globalBack();
+  }
+
 // Future<String?> findText({required String content}) {
 //   return MethodChannelFlutterRpaUtils.instance.findTextList(content: content);
 // }

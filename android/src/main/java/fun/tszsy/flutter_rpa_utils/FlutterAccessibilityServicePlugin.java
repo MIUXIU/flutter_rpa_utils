@@ -122,6 +122,11 @@ public class FlutterAccessibilityServicePlugin extends AccessibilityNodeInfoMeth
                     result.error("error", e.toString(), "");
                 }
                 break;
+
+            case "globalBack":
+                RPAToolsUtils.globalBack(RPAManager.accessibilityService);
+                result.success(true);
+                break;
             default:
                 result.notImplemented();
                 break;

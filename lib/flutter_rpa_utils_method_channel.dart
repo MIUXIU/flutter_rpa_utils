@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:ffi';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rpa_utils/accessibility_node_info.dart';
@@ -60,29 +57,67 @@ class MethodChannelFlutterRpaUtils extends PlatformInterface {
     }
     return AccessibilityNodeInfo.fromMap(map);
   }
-  Future<AccessibilityNodeInfo?> getChildMore({required String source, required List<int> indexList}) async {
-    Map? map = await methodChannel.invokeMethod<Map<dynamic, dynamic>>("getChildMore", {"source": source, "indexList": indexList});
+  Future<int> getChildCount({required String source}) async {
+    int count = await methodChannel.invokeMethod<int>("getChildCount", {"source": source}) ?? 0;
+    return count;
+  }
+
+  Future<AccessibilityNodeInfo?> getParent({required String source}) async {
+    Map? map = await methodChannel.invokeMethod<Map<dynamic, dynamic>>("getParent", {"source": source});
+
     if (map == null) {
       return null;
     }
     return AccessibilityNodeInfo.fromMap(map);
   }
 
+  Future<AccessibilityNodeInfo?> getChildMore({required String source, required List<int> indexList}) async {
+    Map? map = await methodChannel
+        .invokeMethod<Map<dynamic, dynamic>>("getChildMore", {"source": source, "indexList": indexList});
+    if (map == null) {
+      return null;
+    }
+    return AccessibilityNodeInfo.fromMap(map);
+  }
 
   Future<List<AccessibilityNodeInfo>> findAccessibilityNodeInfosByText({required String text}) async {
-    List<Map<dynamic, dynamic>> result = await methodChannel
+    List<Map<dynamic, dynamic>?> result = await methodChannel
             .invokeListMethod<Map<dynamic, dynamic>>('findAccessibilityNodeInfosByText', {"text": text}) ??
         [];
 
     List<AccessibilityNodeInfo> accessibilityNodeInfoList = [];
-    for (Map d in result) {
+    for (Map? d in result) {
+      if (d == null) {
+        continue;
+      }
       accessibilityNodeInfoList.add(AccessibilityNodeInfo.fromMap(d));
     }
     return accessibilityNodeInfoList;
   }
 
+  Future<bool> globalBack() async {
+    return await methodChannel.invokeMethod<bool>('globalBack') ?? false;
+  }
+
   Future<String?> getText({required String source}) async {
-    String? result = await methodChannel.invokeMethod<String?>('getText', {"source": source});
+    String? result = await methodChannel.invokeMethod<String>('getText', {"source": source});
+    return result;
+  }
+
+  Future<bool> scrollToPosition({required String source, required int index, required int rowCount}) async {
+    bool result = await methodChannel
+            .invokeMethod<bool>('scrollToPosition', {"source": source, "rowCount": rowCount, "index": index}) ??
+        false;
+    return result;
+  }
+
+  Future<bool> click({required String source}) async {
+    bool result = await methodChannel.invokeMethod<bool>('click', {"source": source}) ?? false;
+    return result;
+  }
+
+  Future<bool> inputText({required String source, required String text}) async {
+    bool result = await methodChannel.invokeMethod<bool>('inputText', {"source": source, "text": text}) ?? false;
     return result;
   }
 
